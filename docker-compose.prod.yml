@@ -1,0 +1,50 @@
+# docker-compose.prod.yml
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    image: ${DOCKER_IMAGE_BACKEND} # We will pass this from the CI/CD pipeline
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - db
+
+  frontend:
+    image: ${DOCKER_IMAGE_FRONTEND} # We will pass this from the CI/CD pipeline
+    restart: always
+    ports:
+      - "3000:3000" # In a real scenario, this would be 80/443 via a reverse proxy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # The URL for the Next.js app to talk to the backend on the server
+      - NEXT_PUBLIC_API_URL=http://${EC2_HOST}:8080 
+      - NEXT_PUBLIC_WS_URL=ws://${EC2_HOST}:8081
+    depends_on:
+      - db
+
+  ws:
+    image: ${DOCKER_IMAGE_WS} # We will pass this from the CI/CD pipeline
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
