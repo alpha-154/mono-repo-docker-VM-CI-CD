@@ -72,7 +72,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
             # Navigate to the repository directory
-            cd /home/${{ secrets.EC2_USERNAME }}/your-repo
+            cd /home/${{ secrets.EC2_USERNAME }}/mono-repo-docker-VM-CI-CD
 
             # Pull the latest code from the main branch
             git pull origin main
