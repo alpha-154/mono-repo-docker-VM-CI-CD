@@ -1,0 +1,23 @@
+FROM oven/bun:1
+
+WORKDIR /usr/src/app
+
+# Install OpenSSL to fix Prisma issues
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+ARG DATABASE_URL
+COPY ./packages ./packages
+COPY ./bun.lock ./bun.lock
+COPY ./package.json ./package.json
+COPY ./turbo.json ./turbo.json
+COPY ./apps/web ./apps/web
+
+RUN bun install
+RUN bun run db:generate
+
+# Build without database connection - use a dummy URL for build time
+RUN DATABASE_URL="postgresql://dummy:dummy@dummy:5432/dummy" bun run build
+
+EXPOSE 3000
+
+CMD ["bun", "run", "start:web"]
